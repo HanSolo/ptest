@@ -1,0 +1,100 @@
+import java.text.SimpleDateFormat
+
+buildscript {
+    repositories {
+        mavenCentral()
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+    }
+    dependencies {
+        classpath 'org.javamodularity:moduleplugin:1.8.12'
+    }
+}
+
+plugins {
+    id 'java-library'
+    id 'application'
+    id 'org.javamodularity.moduleplugin' version '1.8.12'
+}
+
+normalization {
+    runtimeClasspath {
+        ignore('/META-INF/MANIFEST.MF')
+    }
+}
+
+repositories {
+    mavenCentral()
+    flatDir {
+        dirs 'libs'
+    }
+}
+
+Date buildTimeAndDate = new Date()
+ext {
+    buildDate       = new SimpleDateFormat('yyyy-MM-dd').format(buildTimeAndDate)
+    buildTime       = new SimpleDateFormat('HH:mm:ss.SSSZ').format(buildTimeAndDate)
+}
+
+dependencies {
+
+}
+
+
+application.mainModule = 'eu.hansolo.ptest'
+mainClassName          = 'eu.hansolo.ptest.Main'
+description            = 'Stream performance test'
+
+
+jar {
+
+    from {
+        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+        configurations.runtimeClasspath.collect {  it.isDirectory() ? it : zipTree(it)  }
+    } {
+        exclude "META-INF/*.SF"
+        exclude "META-INF/*.DSA"
+        exclude "META-INF/*.RSA"
+    }
+
+    manifest {
+        attributes(
+                'Build-Date'            : project.buildDate,
+                'Build-Time'            : project.buildTime,
+                'Specification-Title'   : project.name,
+                'Implementation-Title'  : project.name,
+                'Bundle-Name'           : project.name,
+                'Bundle-License'        : 'https://www.apache.org/licenses/LICENSE-2.0;description=Apache License Version 2.0;link=https://spdx.org/licenses/Apache-2.0.html',
+                'Bundle-Description'    : description,
+                'Bundle-SymbolicName'   : 'eu.hansolo.ptest',
+                'Class-Path'            : '${project.name}-${project.version}.jar',
+                'Main-Class'            : 'eu.hansolo.ptest.Main'
+        )
+    }
+}
+
+
+// start the from gradle
+task Main(type: JavaExec) {
+    mainClass = "eu.hansolo.ptest.Main"
+    classpath = sourceSets.main.runtimeClasspath
+}
+
+// Fix problems with loading resources
+sourceSets {
+    main {
+        output.setResourcesDir(java.classesDirectory)
+    }
+}
+
+run {
+    inputs.property("moduleName", moduleName)
+    doFirst {
+        jvmArgs = [
+                '--module-path', classpath.asPath,
+                '--module', mainClassName
+        ]
+        classpath = files()
+    }
+}
