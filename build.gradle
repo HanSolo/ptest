@@ -81,6 +81,12 @@ task Main(type: JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
 }
 
+task StreamBenchmarks(type: JavaExec) {
+    mainClass = "eu.hansolo.ptest.StreamBenchmarks"
+    classpath = sourceSets.main.runtimeClasspath
+}
+
+
 // Fix problems with loading resources
 sourceSets {
     main {
